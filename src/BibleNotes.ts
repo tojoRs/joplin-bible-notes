@@ -2,6 +2,7 @@ import joplin from 'api';
 import { settings } from './settings';
 import { ToolbarButtonLocation } from 'api/types';
 import { OSISRef } from './models/OSISRef';
+import { NoteWithRefs, TNoteWithRefs } from './models/NoteWithRefs';
 
 import { ClickNoteEvent, WebviewEventType } from './WebviewEvent';
 import { PluginEvent, PluginEventType } from './PluginEvent';
@@ -10,6 +11,7 @@ import { disconnect } from 'process';
 import { ReferenceMatcher } from './ReferenceMatcher';
 import { resolve } from 'path';
 import JoplinSettings from 'api/JoplinSettings';
+import { Cache } from './Cache';
 
 /**
  *
@@ -102,6 +104,7 @@ export namespace BibleNotes {
      */
     export async function init() {
         console.info('Bible Notes plugin started!');
+        // Cache.clear();
         const panel = await createPanel();
         await setupSettings();
         await setupCommands(panel);
@@ -135,23 +138,9 @@ export namespace BibleNotes {
         return titles;
     }
 
-    class NoteWithRefs {
-        refs: OSISRef[];
-        title: string;
-        id: string;
-
-        constructor(id: string, title: string, refs: OSISRef[]) {
-            this.id = id;
-            this.refs = refs;
-            this.title = title;
-        }
-
-        addOSISRef(osisRef: OSISRef): void {
-            if (this.refs.find((value, index, a) => {}))
-                this.refs.push(osisRef);
-        }
-    }
-
+    /**
+     *
+     * */
     async function prepareQueryResults(query): Promise<NotesByOSISRef[]> {
         var notesWithRefs = await getNotesWithRefs();
         var resultDict = {};
@@ -181,24 +170,59 @@ export namespace BibleNotes {
     }
 
     async function getNotesWithRefs(): Promise<NoteWithRefs[]> {
-        // for each note in notes
-        let notesWithRefs: NoteWithRefs[] = [];
+        let notesWithRefs: TNoteWithRefs[] = [];
         let pageNum = 1; // The start defaults to 1 according to the API documentation.
         do {
             var response = await joplin.data.get(['notes'], {
-                fields: ['id', 'title', 'body'],
+                fields: ['id', 'title', 'body', 'updated_time'],
                 page: pageNum++,
             });
-            response.items.forEach((note, _index, _array) => {
-                var refs = ReferenceMatcher.matchReferences(
-                    note['body'],
-                ).concat(ReferenceMatcher.matchReferences(note['title']));
-                var finalRefs = ReferenceMatcher.uniqueReferences(refs);
 
-                if (finalRefs.length > 0) {
-                    notesWithRefs.push(
-                        new NoteWithRefs(note['id'], note['title'], finalRefs),
+            response.items.forEach((note, _index, _array) => {
+                var lNote;
+                var uniqueRefs;
+                if (!Cache.hasNote(note['id'])) {
+                    // Analyse note.
+                    var refs = ReferenceMatcher.matchReferences(
+                        note['body'],
+                    ).concat(ReferenceMatcher.matchReferences(note['title']));
+                    uniqueRefs = ReferenceMatcher.uniqueReferences(refs);
+
+                    lNote = new TNoteWithRefs(
+                        note['id'],
+                        note['title'],
+                        uniqueRefs,
+                        note['updated_time'],
                     );
+
+                    Cache.setNote(note['id'], lNote);
+                } // end of if cache has note
+                else {
+                    // Cache has note.
+                    var cacheNote = Cache.getNote(note['id']);
+                    if (note['updated_time'] > cacheNote.updatedTime) {
+                        // Analyse note again.
+                        var refs = ReferenceMatcher.matchReferences(
+                            note['body'],
+                        ).concat(
+                            ReferenceMatcher.matchReferences(note['title']),
+                        );
+                        uniqueRefs = ReferenceMatcher.uniqueReferences(refs);
+
+                        lNote = new TNoteWithRefs(
+                            note['id'],
+                            note['title'],
+                            uniqueRefs,
+                            note['updated_time'],
+                        );
+                        Cache.setNote(note['id'], lNote);
+                    } else {
+                        lNote = cacheNote;
+                        uniqueRefs = cacheNote['refs'];
+                    }
+                }
+                if (uniqueRefs.length > 0) {
+                    notesWithRefs.push(lNote);
                 }
             });
         } while (response.has_more);

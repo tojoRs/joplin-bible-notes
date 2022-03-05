@@ -197,7 +197,7 @@ export class OSISRef {
 
     static cv_separator: string = ',';
 
-    constructor(osisID) {
+    constructor(osisID : string) {
         this.osisID = osisID;
         this.parts = osisID.split('-');
         if (this.parts[1] === undefined) {
@@ -401,6 +401,10 @@ export class OSISRef {
     toString(): string {
         return this.osisID;
     }
+
+	static fromJSON(json) : OSISRef {
+		return new OSISRef(json['osisID']);
+	}
 
     getHumanReadableString(lang): string {
         return OSISRef.getHumanReadableString(lang, this.osisID);

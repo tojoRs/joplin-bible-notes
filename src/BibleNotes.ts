@@ -5,18 +5,21 @@ import { OSISRef } from './models/OSISRef';
 import { NoteWithRefs, TNoteWithRefs } from './models/NoteWithRefs';
 
 import { ClickNoteEvent, WebviewEventType } from './WebviewEvent';
-import { PluginEvent, PluginEventType } from './PluginEvent';
+import { PluginEvent, PluginEventType, NoteUpdateEvent } from './PluginEvent';
 import { NotesByOSISRef } from './FetchDataResult';
 import { disconnect } from 'process';
 import { ReferenceMatcher } from './ReferenceMatcher';
 import { resolve } from 'path';
 import JoplinSettings from 'api/JoplinSettings';
 import { Cache } from './Cache';
+import { RefsNotesDB } from './RefsNotesDB';
 
 /**
  *
  */
 export namespace BibleNotes {
+    var gRefsNotesDB: RefsNotesDB;
+
     /**
      * Create the mail plugin panel.
      * @returns
@@ -45,7 +48,14 @@ export namespace BibleNotes {
                         'Plugin received event FETCH_DATA : ' + event.query,
                     );
 
-                    var notesByOSISRef = await prepareQueryResults(event.query);
+                    var notesByOSISRef = [];
+                    if (event.query == '_all_') {
+                        notesByOSISRef = gRefsNotesDB.getNotesForOSISRef('');
+                    } else {
+                        notesByOSISRef = gRefsNotesDB.getNotesForOSISRef(
+                            event.query,
+                        );
+                    }
                     var resultEvent = new PluginEvent(
                         PluginEventType.FETCH_RESULT,
                     );
@@ -98,25 +108,40 @@ export namespace BibleNotes {
         );
     }
 
+    function updatePanelOnNoteChange(panel) {
+        // Mise à jour des notes vers le bas.
+        // Envoi des informations nécessaires vers le haut.
+        return async (event: any) => {
+            var changed = await gRefsNotesDB.updateNote(event.id);
+            if (changed) {
+                joplin.views.panels.postMessage(
+                    panel,
+                    new NoteUpdateEvent(event.id),
+                );
+            }
+        };
+    }
+
     /**
      * I should find a way here to check whether I need to scan all the notes at startup or not.
      * Some dialog box.
      */
     export async function init() {
         console.info('Bible Notes plugin started!');
-        // Cache.clear();
+        gRefsNotesDB = new RefsNotesDB();
         const panel = await createPanel();
+        joplin.workspace.onNoteChange(updatePanelOnNoteChange(panel));
+
         await setupSettings();
         await setupCommands(panel);
         await setupControls();
-        await updatePanelData();
-        // await connectNoteChangedCallback(updatePanelData);
+        //  await updatePanelData();
     }
 
     export async function updatePanelData() {
         // TODO
         console.info('Webview updated');
-        await getNotesWithRefs();
+        await gRefsNotesDB.getNotesWithRefs();
     }
 
     export async function settingsChanged(event: any) {
@@ -136,96 +161,5 @@ export namespace BibleNotes {
     async function getAllNoteTitles(): Promise<any> {
         const titles = await joplin.data.get(['notes'], { fields: ['title'] });
         return titles;
-    }
-
-    /**
-     *
-     * */
-    async function prepareQueryResults(query): Promise<NotesByOSISRef[]> {
-        var notesWithRefs = await getNotesWithRefs();
-        var resultDict = {};
-
-        notesWithRefs.forEach((noteWithRefs, index, array) => {
-            var refs = noteWithRefs.refs;
-            refs.forEach((r, i, a) => {
-                const refString = r.toString();
-                if (refString in resultDict) {
-                    var n: NotesByOSISRef = resultDict[refString];
-                    if (!n.hasNote(noteWithRefs.id)) {
-                        n.addNoteInfo(noteWithRefs.id, noteWithRefs.title);
-                    }
-                } else {
-                    resultDict[refString] = new NotesByOSISRef(r);
-                    resultDict[refString].addNoteInfo(
-                        noteWithRefs.id,
-                        noteWithRefs.title,
-                    );
-                }
-            });
-        });
-
-        return Object.keys(resultDict).map((key) => {
-            return resultDict[key];
-        });
-    }
-
-    async function getNotesWithRefs(): Promise<NoteWithRefs[]> {
-        let notesWithRefs: TNoteWithRefs[] = [];
-        let pageNum = 1; // The start defaults to 1 according to the API documentation.
-        do {
-            var response = await joplin.data.get(['notes'], {
-                fields: ['id', 'title', 'body', 'updated_time'],
-                page: pageNum++,
-            });
-
-            response.items.forEach((note, _index, _array) => {
-                var lNote;
-                var uniqueRefs;
-                if (!Cache.hasNote(note['id'])) {
-                    // Analyse note.
-                    var refs = ReferenceMatcher.matchReferences(
-                        note['body'],
-                    ).concat(ReferenceMatcher.matchReferences(note['title']));
-                    uniqueRefs = ReferenceMatcher.uniqueReferences(refs);
-
-                    lNote = new TNoteWithRefs(
-                        note['id'],
-                        note['title'],
-                        uniqueRefs,
-                        note['updated_time'],
-                    );
-
-                    Cache.setNote(note['id'], lNote);
-                } // end of if cache has note
-                else {
-                    // Cache has note.
-                    var cacheNote = Cache.getNote(note['id']);
-                    if (note['updated_time'] > cacheNote.updatedTime) {
-                        // Analyse note again.
-                        var refs = ReferenceMatcher.matchReferences(
-                            note['body'],
-                        ).concat(
-                            ReferenceMatcher.matchReferences(note['title']),
-                        );
-                        uniqueRefs = ReferenceMatcher.uniqueReferences(refs);
-
-                        lNote = new TNoteWithRefs(
-                            note['id'],
-                            note['title'],
-                            uniqueRefs,
-                            note['updated_time'],
-                        );
-                        Cache.setNote(note['id'], lNote);
-                    } else {
-                        lNote = cacheNote;
-                        uniqueRefs = cacheNote['refs'];
-                    }
-                }
-                if (uniqueRefs.length > 0) {
-                    notesWithRefs.push(lNote);
-                }
-            });
-        } while (response.has_more);
-        return notesWithRefs;
     }
 }

@@ -1,6 +1,6 @@
-"use strict";
+'use strict';
 
-import { OSISRef } from "./models/OSISRef";
+import { OSISRef } from './models/OSISRef';
 
 export interface NoteInfo {
     noteID: string;
@@ -30,5 +30,9 @@ export class NotesByOSISRef {
                 return element.noteID === noteID;
             }) !== undefined
         );
+    }
+
+    removeNote(noteID: string) {
+        this.notes = this.notes.filter((noteInfo) => noteInfo.noteID !== noteID);
     }
 }

@@ -44,4 +44,9 @@ export class TNoteWithRefs extends NoteWithRefs {
         }
         return new TNoteWithRefs(o['id'], o['title'], refs, o['updatedTime']);
     }
+
+    hasSameRefsAs(o: TNoteWithRefs): Boolean {
+        // TODO
+        return false;
+    }
 }

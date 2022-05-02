@@ -13,16 +13,17 @@ import { NotesByOSISRef } from "./FetchDataResult";
 import { OSISRef } from "./models/OSISRef";
 declare var webviewApi: any;
 var gBibleHierarchy: JSX.Element;
-
+var noteUpdateFunc: Function;
 
 function onPluginMessage(message) {
-	console.log("Webview recieved message");
-	switch(message.type) {
+	var event : PluginEvent = message.message;
+	switch(event.type) {
 		case PluginEventType.NOTE_UPDATE:
-			console.log("Note Data : ", message.value);
+			console.log("Note Data - ", event.value);
+			noteUpdateFunc();
 			break;
-		default:
-			console.log("Unknown message.");
+		default:			
+			console.log("Unknown message -", event);
 	}
 }
 
@@ -63,6 +64,10 @@ async function fetchAllData(): Promise<NotesByOSISRef> {
         });
 }
 
+function noteUpdateWrapper(f : Function) {
+	noteUpdateFunc = f;
+}
+
 function createBibleHierarchy() {
     let hierarchyElement = document.getElementById("bible-hierarchy");
 
@@ -72,8 +77,9 @@ function createBibleHierarchy() {
         {
             fetchDataCallback: fetchAllData,
             noteClickCallback: noteClickCallback,
+			noteUpdateWrapper: noteUpdateWrapper,
         },
-        null
+		null
     );
     render(gBibleHierarchy, hierarchyElement);
 }

@@ -5,40 +5,67 @@ import { ReferenceMatcher } from './ReferenceMatcher';
 import { Cache } from './Cache';
 import { NotesByOSISRef } from './FetchDataResult';
 
-export class RefsNotesDB {
-    /**
-     * A dictionary of the Notes indexed by the OSISRef's string
-     * */
-    osisRefsDictionary: { [id: string]: NotesByOSISRef };
-
-    /**
-     * A Dictionary of the notes indexed by the note_id
-     * */
-    notesDictionary: { [id: string]: NoteWithRefs };
-
+class OSISRefsMap extends Map<string, NotesByOSISRef> {
     constructor() {
-        this.notesDictionary = {};
-        this.osisRefsDictionary = {};
-        this.fillDB();
+        super();
     }
 
-    private addNotetoOSISRefsDictionary(noteWithRefs: NoteWithRefs) {
+    addNote(noteWithRefs: NoteWithRefs): void {
         var refs = noteWithRefs.refs;
         refs.forEach((r, i, a) => {
             const refString = r.toString();
-            if (refString in this.osisRefsDictionary) {
-                var n: NotesByOSISRef = this.osisRefsDictionary[refString];
+            if (refString in super.keys()) {
+                var n: NotesByOSISRef = super.get(refString);
                 if (!n.hasNote(noteWithRefs.id)) {
                     n.addNoteInfo(noteWithRefs.id, noteWithRefs.title);
                 }
             } else {
-                this.osisRefsDictionary[refString] = new NotesByOSISRef(r);
-                this.osisRefsDictionary[refString].addNoteInfo(
-                    noteWithRefs.id,
-                    noteWithRefs.title,
-                );
+                super.set(refString, new NotesByOSISRef(r));
+                super
+                    .get(refString)
+                    .addNoteInfo(noteWithRefs.id, noteWithRefs.title);
             }
         });
+    }
+
+    removeNote(note: NoteWithRefs) {
+        var noteId: string = note.id;
+        note.refs.forEach((osisRef, i, a) => {
+            var refString = osisRef.toString();
+            var notesByOSISRefs: NotesByOSISRef = super.get(refString);
+            notesByOSISRefs.removeNote(noteId);
+
+            if (notesByOSISRefs.notes.length == 0) {
+                super.delete(refString);
+            }
+        });
+    }
+} // end class
+
+class NotesMap extends Map<string, NoteWithRefs> {
+    constructor() {
+        super();
+    }
+}
+
+/**
+ * This class has to synchronize both maps :
+ * */
+export class RefsNotesDB {
+    /**
+     * A dictionary of the Notes indexed by the OSISRef's string
+     * */
+    private osisRefsMap: OSISRefsMap;
+
+    /**
+     * A Dictionary of the notes indexed by the note_id
+     * */
+    private notesMap: NotesMap;
+
+    constructor() {
+        this.notesMap = new NotesMap();
+        this.osisRefsMap = new OSISRefsMap();
+        this.fillDB();
     }
 
     static processNoteData(note): TNoteWithRefs {
@@ -95,7 +122,7 @@ export class RefsNotesDB {
     }
 
     getNotesWithRefs(): NoteWithRefs[] {
-        return Object.values(this.notesDictionary);
+        return Array.from(this.notesMap.values());
     }
 
     /**
@@ -124,31 +151,16 @@ export class RefsNotesDB {
         return !isSame;
     }
 
-    private removeNoteFromOSISRefsDictionary(note: NoteWithRefs) {
-        var noteId: string = note.id;
-        note.refs.forEach((osisRef, i, a) => {
-            var refString = osisRef.toString();
-            var notesByOSISRefs: NotesByOSISRef =
-                this.osisRefsDictionary[refString];
-            notesByOSISRefs.removeNote(noteId);
-
-            if (notesByOSISRefs.notes.length == 0) {
-                delete this.osisRefsDictionary[refString];
-            }
-        });
-    }
-
     removeNote(noteId: string): void {
-        var note = this.notesDictionary[noteId];
-        if (note !== undefined) {
-            this.removeNoteFromOSISRefsDictionary(note);
-            delete this.notesDictionary[noteId];
+        if (this.notesMap.has(noteId)) {
+            this.osisRefsMap.removeNote(this.notesMap.get(noteId));
+            this.notesMap.delete(noteId);
         }
     }
 
     addNote(note: NoteWithRefs): void {
-        this.notesDictionary[note.id] = note;
-        this.addNotetoOSISRefsDictionary(note);
+        this.notesMap.set(note.id, note);
+        this.osisRefsMap.addNote(note);
     }
 
     /**
@@ -157,9 +169,9 @@ export class RefsNotesDB {
     getNotesForOSISRef(osisString: string): NotesByOSISRef[] {
         if (osisString === '') {
             // Return all the notes in the database
-            return Object.values(this.osisRefsDictionary);
+            return Array.from(this.osisRefsMap.values());
         } else {
-            return [this.osisRefsDictionary[osisString]];
+            return [this.osisRefsMap[osisString]];
         }
     }
 
@@ -167,8 +179,8 @@ export class RefsNotesDB {
      *
      * */
     getOSISRefsForNoteID(noteId: string): OSISRef[] {
-        if (this.notesDictionary[noteId] !== undefined) {
-            return this.notesDictionary[noteId].refs;
+        if (this.notesMap.has(noteId)) {
+            return this.notesMap[noteId].refs;
         }
         return [];
     }

@@ -92,7 +92,7 @@ export namespace BibleNotes {
         await joplin.commands.register({
             name: 'toggleBibleNotes',
             label: 'Toggle Bible Notes',
-            iconName: 'fas fa-drum',
+            iconName: 'fas fa-bible',
             execute: async () => {
                 const isVisible = await joplin.views.panels.visible(panel);
                 await joplin.views.panels.show(panel, !isVisible);
@@ -109,8 +109,6 @@ export namespace BibleNotes {
     }
 
     function updatePanelOnNoteChange(panel) {
-        // Mise à jour des notes vers le bas.
-        // Envoi des informations nécessaires vers le haut.
         return async (event: any) => {
             var changed = await gRefsNotesDB.updateNote(event.id);
             if (changed) {
@@ -135,13 +133,6 @@ export namespace BibleNotes {
         await setupSettings();
         await setupCommands(panel);
         await setupControls();
-        //  await updatePanelData();
-    }
-
-    export async function updatePanelData() {
-        // TODO
-        console.info('Webview updated');
-        await gRefsNotesDB.getNotesWithRefs();
     }
 
     export async function settingsChanged(event: any) {

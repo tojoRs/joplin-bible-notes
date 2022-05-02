@@ -56,6 +56,7 @@ interface IBibleHierarchyProps {
     rootHeight?: number;
     fetchDataCallback: Function;
     noteClickCallback: Function;
+    noteUpdateWrapper: Function;
     notes?: NotesByOSISRef[];
 }
 
@@ -303,8 +304,7 @@ export class BibleHierarchy extends React.Component<
     }
 
     componentDidMount(): void {
-        // TODO Fetch the necessary data.
-        // And it update the state
+        this.props.noteUpdateWrapper(this.fetchData.bind(this));
         this.resize();
         this.fetchData();
     }

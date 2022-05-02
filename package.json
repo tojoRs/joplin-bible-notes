@@ -20,6 +20,7 @@
     "copy-webpack-plugin": "^6.1.0",
     "fs-extra": "^9.0.1",
     "glob": "^7.1.6",
+    "localstorage-polyfill": "^1.0.1",
     "on-build-webpack": "^0.1.0",
     "tap": "^15.1.6",
     "tar": "^6.0.5",

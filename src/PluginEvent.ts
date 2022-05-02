@@ -1,3 +1,5 @@
+"use strict";
+
 import { TNoteWithRefs } from './models/NoteWithRefs';
 
 export enum PluginEventType {
@@ -15,7 +17,7 @@ export class PluginEvent {
 }
 
 export class NoteUpdateEvent extends PluginEvent {
-    constructor(noteData: TNoteWithRefs) {
+    constructor(noteData) {
         super(PluginEventType.NOTE_UPDATE);
         this.value = noteData;
     }

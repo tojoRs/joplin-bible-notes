@@ -7,9 +7,7 @@ import { NoteWithRefs, TNoteWithRefs } from './models/NoteWithRefs';
 import { ClickNoteEvent, WebviewEventType } from './WebviewEvent';
 import { PluginEvent, PluginEventType, NoteUpdateEvent } from './PluginEvent';
 import { NotesByOSISRef } from './FetchDataResult';
-import { disconnect } from 'process';
 import { ReferenceMatcher } from './ReferenceMatcher';
-import { resolve } from 'path';
 import JoplinSettings from 'api/JoplinSettings';
 import { Cache } from './Cache';
 import { RefsNotesDB } from './RefsNotesDB';
@@ -79,6 +77,8 @@ export namespace BibleNotes {
      */
     async function setupSettings(): Promise<void> {
         await settings.register();
+
+		console.log(await joplin.settings.globalValue("locale"));
 
         // init settings value
         await updateSetting('lang');

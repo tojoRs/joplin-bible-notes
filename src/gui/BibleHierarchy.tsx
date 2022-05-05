@@ -2,6 +2,8 @@ import * as React from 'react';
 import { hierarchy } from '../models/hierarchy';
 import { NoteInfo, NotesByOSISRef } from '../FetchDataResult';
 import { OSISRef } from '../models/OSISRef';
+import { OSISRefRenderer } from '../utils/OSISRefRenderer';
+
 const styled = require('styled-components').default;
 import {
     ExpandIcon,
@@ -83,7 +85,11 @@ export class NoteItem extends React.Component<INoteProps> {
                     href="#"
                     id={this.props.noteInfo.noteID}
                     onClick={this.handleClick}>
-                    {this.props.osisRef.getHumanReadableString('fr')} -&nbsp;
+                    {OSISRefRenderer.getHumanReadableString(
+                        'fr',
+                        this.props.osisRef.toString(),
+                    )}{' '}
+                    -&nbsp;
                     {this.props.noteInfo.noteTitle}
                 </StyledNoteAnchor>
             </StyledNoteItem>

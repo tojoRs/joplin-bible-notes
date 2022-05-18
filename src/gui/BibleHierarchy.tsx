@@ -120,7 +120,11 @@ export class Book extends React.Component<IBookProps, IBookState> {
         if (this.props.notes.length == 0) return null;
         else {
             // Generate notes.
-            var noteElements = this.props.notes.map((notes, _index, _array) => {
+            var orderedNotes = this.props.notes.sort((n1, n2) => {
+                return n1.osisRef.compare(n2.osisRef);
+            });
+
+            var noteElements = orderedNotes.map((notes, _index, _array) => {
                 var osisRef = notes.osisRef;
                 var osisRefElements = notes.notes.map((noteInfo, i, a) => {
                     return (

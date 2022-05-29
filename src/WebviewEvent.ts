@@ -1,10 +1,11 @@
-import { OSISRef } from "./models/OSISRef";
+import { OSISRef } from './models/OSISRef';
 
 export enum WebviewEventType {
     CLICK_NOTE,
     SOME_MESSAGE,
     FETCH_DATA,
     ACCEPT_RESPONSE,
+    GET_SETTING,
 }
 
 export class WebviewEvent {
@@ -38,5 +39,13 @@ export class FetchDataEvent extends WebviewEvent {
     constructor(query) {
         super(WebviewEventType.FETCH_DATA);
         this.query = query;
+    }
+}
+
+export class GetSettingEvent extends WebviewEvent {
+    setting: string;
+    constructor(setting) {
+        super(WebviewEventType.GET_SETTING);
+        this.setting = setting;
     }
 }

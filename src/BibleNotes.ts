@@ -7,19 +7,17 @@ import { NoteWithRefs, TNoteWithRefs } from './models/NoteWithRefs';
 import { ClickNoteEvent, WebviewEventType } from './WebviewEvent';
 import { PluginEvent, PluginEventType, NoteUpdateEvent } from './PluginEvent';
 import { NotesByOSISRef } from './FetchDataResult';
-import { ReferenceMatcher } from './ReferenceMatcher';
 import JoplinSettings from 'api/JoplinSettings';
-import { Cache } from './Cache';
 import { RefsNotesDB } from './RefsNotesDB';
 
 /**
- *
+ * Main namespace for the BibleNotes plugin
  */
 export namespace BibleNotes {
     var gRefsNotesDB: RefsNotesDB;
 
     /**
-     * Create the mail plugin panel.
+     * Create the main plugin panel.
      * @returns
      */
     async function createPanel(): Promise<string> {
@@ -64,6 +62,15 @@ export namespace BibleNotes {
                     console.log('Webview is ready to listen');
                     break;
 
+                case WebviewEventType.GET_SETTING:
+                    console.log('Get setting event', event.setting);
+					if (event.setting === "locale") {
+						return joplin.settings.globalValue(event.setting);
+					} else {
+						// Unknown setting
+						return;
+					}
+
                 default:
                     console.log('Unhandled message ' + event);
             }
@@ -77,11 +84,6 @@ export namespace BibleNotes {
      */
     async function setupSettings(): Promise<void> {
         await settings.register();
-
-		console.log(await joplin.settings.globalValue("locale"));
-
-        // init settings value
-        await updateSetting('lang');
 
         joplin.settings.onChange(async (event: any) => {
             await BibleNotes.settingsChanged(event);
@@ -133,6 +135,8 @@ export namespace BibleNotes {
         await setupSettings();
         await setupCommands(panel);
         await setupControls();
+
+        // Send settings to the webview
     }
 
     export async function settingsChanged(event: any) {

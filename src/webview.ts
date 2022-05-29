@@ -1,30 +1,34 @@
-import { render } from "react-dom";
-import { BibleHierarchy } from "./gui/BibleHierarchy";
+import joplin from 'api';
+import { render } from 'react-dom';
+import { BibleNotesPanel } from './gui/BibleNotesPanel';
 import {
     ClickNoteEvent,
     FetchDataEvent,
+    GetSettingEvent,
     WebviewEvent,
     WebviewEventType,
-} from "./WebviewEvent";
-import React = require("react");
-import { pathToFileURL } from "url";
-import { PluginEvent, PluginEventType } from "./PluginEvent";
-import { NotesByOSISRef } from "./FetchDataResult";
-import { OSISRef } from "./models/OSISRef";
+} from './WebviewEvent';
+import React = require('react');
+import { pathToFileURL } from 'url';
+import { PluginEvent, PluginEventType } from './PluginEvent';
+import { NotesByOSISRef } from './FetchDataResult';
+import { OSISRef } from './models/OSISRef';
+import { Locales } from './i18n/i18n-types';
+
 declare var webviewApi: any;
-var gBibleHierarchy: JSX.Element;
+var gBibleNotesPanel: JSX.Element;
 var noteUpdateFunc: Function;
 
 function onPluginMessage(message) {
-	var event : PluginEvent = message.message;
-	switch(event.type) {
-		case PluginEventType.NOTE_UPDATE:
-			console.log("Note Data - ", event.value);
-			noteUpdateFunc();
-			break;
-		default:			
-			console.log("Unknown message -", event);
-	}
+    var event: PluginEvent = message.message;
+    switch (event.type) {
+        case PluginEventType.NOTE_UPDATE:
+            console.log('Note Data - ', event.value);
+            noteUpdateFunc();
+            break;
+        default:
+            console.log('Unknown message -', event);
+    }
 }
 
 // Recieving the message from the plugin.
@@ -39,14 +43,14 @@ function noteClickCallback(noteId: string) {
 }
 
 async function fetchAllData(): Promise<NotesByOSISRef> {
-    console.log("Callback : Fetching all data");
+    console.log('Callback : Fetching all data');
     return webviewApi
-        .postMessage(new FetchDataEvent("_all_"))
+        .postMessage(new FetchDataEvent('_all_'))
         .then((event: PluginEvent) => {
             if (event.type == PluginEventType.FETCH_RESULT) {
                 var data = event.value.map((notesByOSISRef) => {
                     var p = new NotesByOSISRef(
-                        new OSISRef(notesByOSISRef.osisRef.osisID)
+                        new OSISRef(notesByOSISRef.osisRef.osisID),
                     );
                     notesByOSISRef.notes.forEach((noteInfo) => {
                         p.addNoteInfo(noteInfo.noteID, noteInfo.noteTitle);
@@ -55,30 +59,45 @@ async function fetchAllData(): Promise<NotesByOSISRef> {
                 });
                 return data;
             } else {
-                console.log("Got another response : ", event.value);
-                throw Error("Unknown response");
+                console.log('Got another response : ', event.value);
+                throw Error('Unknown response');
             }
         });
 }
 
-function noteUpdateWrapper(f : Function) {
-	noteUpdateFunc = f;
+function noteUpdateWrapper(f: Function) {
+    noteUpdateFunc = f;
 }
 
-function createBibleHierarchy() {
-    let hierarchyElement = document.getElementById("bible-hierarchy");
+function createBibleNotesPanel(locale: Locales) {
+    let hierarchyElement = document.getElementById('bible-hierarchy');
 
     // I do it like this because I am in a .ts file.
-    gBibleHierarchy = React.createElement(
-        BibleHierarchy,
+    gBibleNotesPanel = React.createElement(
+        BibleNotesPanel,
         {
+            locale: locale,
             fetchDataCallback: fetchAllData,
             noteClickCallback: noteClickCallback,
-			noteUpdateWrapper: noteUpdateWrapper,
+            noteUpdateWrapper: noteUpdateWrapper,
         },
-		null
+        null,
     );
-    render(gBibleHierarchy, hierarchyElement);
+    render(gBibleNotesPanel, hierarchyElement);
 }
 
-createBibleHierarchy();
+function start() {
+    webviewApi.postMessage(new GetSettingEvent('locale')).then(
+        (locale) => {
+			var l : Locales = locale.split('_')[0];
+            createBibleNotesPanel(l);
+        },
+
+		// Defaulting to fr.
+        () => {
+            createBibleNotesPanel('fr');
+        },
+    );
+}
+
+start();

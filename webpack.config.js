@@ -29,6 +29,7 @@ const userConfig = Object.assign({}, {
 
 const manifestPath = `${srcDir}/manifest.json`;
 const packageJsonPath = `${rootDir}/package.json`;
+const allPossibleCategories = ['appearance', 'developer tools', 'productivity', 'themes', 'integrations', 'viewer', 'search', 'tags', 'editor', 'files', 'personal knowledge management'];
 const manifest = readManifest(manifestPath);
 const pluginArchiveFilePath = path.resolve(publishDir, `${manifest.id}.jpl`);
 const pluginInfoFilePath = path.resolve(publishDir, `${manifest.id}.json`);
@@ -67,10 +68,19 @@ function currentGitInfo() {
 	}
 }
 
+function validateCategories(categories) {
+	if (!categories) return null;
+	if ((categories.length !== new Set(categories).size)) throw new Error('Repeated categories are not allowed');
+	categories.forEach(category => {
+		if (!allPossibleCategories.includes(category)) throw new Error(`${category} is not a valid category. Please make sure that the category name is lowercase. Valid Categories are: \n${allPossibleCategories}\n`);
+	});
+}
+
 function readManifest(manifestPath) {
 	const content = fs.readFileSync(manifestPath, 'utf8');
 	const output = JSON.parse(content);
 	if (!output.id) throw new Error(`Manifest plugin ID is not set in ${manifestPath}`);
+	validateCategories(output.categories);
 	return output;
 }
 
@@ -169,7 +179,7 @@ const extraScriptConfig = Object.assign({}, baseConfig, {
 		alias: {
 			api: path.resolve(__dirname, 'api'),
 		},
-		extensions: ['.js', '.tsx', '.ts', '.json'],
+		extensions: ['.js', '.tsx', '.ts', '.cjs', '.json'],
 	},
 });
 
@@ -198,9 +208,6 @@ function resolveExtraScriptPath(name) {
 		output: {
 			filename: `${nameNoExt}.js`,
 			path: distDir,
-			/* library: 'default',
-			libraryTarget: 'commonjs',
-			libraryExport: 'default', */
 		},
 	};
 }

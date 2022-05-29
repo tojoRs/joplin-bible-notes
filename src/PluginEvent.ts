@@ -5,6 +5,12 @@ import { TNoteWithRefs } from './models/NoteWithRefs';
 export enum PluginEventType {
     FETCH_RESULT,
     NOTE_UPDATE,
+	SETTING_MESSAGE,
+}
+
+interface Setting {
+	name : string;
+	value : any;
 }
 
 export class PluginEvent {
@@ -21,4 +27,11 @@ export class NoteUpdateEvent extends PluginEvent {
         super(PluginEventType.NOTE_UPDATE);
         this.value = noteData;
     }
+}
+
+export class SettingEvent extends PluginEvent {
+	constructor(setting : Setting) {
+		super(PluginEventType.SETTING_MESSAGE);
+		this.value = setting;
+	}
 }

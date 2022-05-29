@@ -3,8 +3,10 @@ import { hierarchy } from '../models/hierarchy';
 import { NoteInfo, NotesByOSISRef } from '../FetchDataResult';
 import { OSISRef } from '../models/OSISRef';
 import { OSISRefRenderer } from '../utils/OSISRefRenderer';
+import { I18nContext } from '../i18n/i18n-react';
 
 const styled = require('styled-components').default;
+
 import {
     ExpandIcon,
     StyledBook,
@@ -98,6 +100,8 @@ export class NoteItem extends React.Component<INoteProps> {
 }
 
 export class Book extends React.Component<IBookProps, IBookState> {
+    static contextType = I18nContext;
+
     constructor(props) {
         super(props);
         this.state = {
@@ -117,6 +121,7 @@ export class Book extends React.Component<IBookProps, IBookState> {
     }
 
     render() {
+        const { locale, LL, setLocale }: typeof I18nContext = this.context;
         if (this.props.notes.length == 0) return null;
         else {
             // Generate notes.
@@ -146,7 +151,7 @@ export class Book extends React.Component<IBookProps, IBookState> {
                             onClick={this.toggleExpand}
                         />
                         <StyledTitle className="title">
-                            {this.props.label} ({this.props.notes.length})
+                            {LL[this.props.id]()} ({this.props.notes.length})
                         </StyledTitle>
                     </StyledItemHeader>
                     {this.state.isExpanded == true ? noteElements : null}
@@ -157,6 +162,8 @@ export class Book extends React.Component<IBookProps, IBookState> {
 } // end class Book
 
 export class Section extends React.Component<ISectionProps, ISectionState> {
+    static contextType = I18nContext;
+
     constructor(props) {
         super(props);
         this.state = {
@@ -183,6 +190,8 @@ export class Section extends React.Component<ISectionProps, ISectionState> {
 
     render() {
         var lHierarchy = this.props.tree;
+        const { locale, LL, setLocale }: typeof I18nContext = this.context;
+
         const elements = Object.keys(lHierarchy.elements).map((elementId) => {
             if (lHierarchy.elements[elementId].type === 'section') {
                 return (
@@ -228,7 +237,7 @@ export class Section extends React.Component<ISectionProps, ISectionState> {
                         onClick={this.toggleExpand}
                     />
                     <StyledTitle className="title">
-                        {lHierarchy.label}
+                        {LL[this.props.id]()}
                     </StyledTitle>
                 </StyledItemHeader>
                 {this.state.isExpanded == true ? elements : null}
@@ -242,6 +251,8 @@ export class BibleHierarchy extends React.Component<
     IBibleHierarchyState
 > {
     titleRef: React.RefObject<HTMLSpanElement>;
+
+    static contextType = I18nContext;
 
     constructor(props) {
         super(props);
@@ -287,16 +298,17 @@ export class BibleHierarchy extends React.Component<
     }
 
     render() {
+        const { locale, LL, setLocale }: typeof I18nContext = this.context;
+
         const MainTitle = styled(StyledTitle)`
             padding: 8px;
             align: center;
             font-size: 18px;
         `;
-
         return (
             <StyledRoot className="bible-hierarchy">
                 <MainTitle className="title" ref={this.titleRef}>
-                    Notes bibliques
+                    {LL['Notes Bibliques']()}
                 </MainTitle>
                 <Section
                     key="root"

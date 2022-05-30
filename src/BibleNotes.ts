@@ -3,11 +3,9 @@ import { settings } from './settings';
 import { ToolbarButtonLocation } from 'api/types';
 import { OSISRef } from './models/OSISRef';
 import { NoteWithRefs, TNoteWithRefs } from './models/NoteWithRefs';
-
 import { ClickNoteEvent, WebviewEventType } from './WebviewEvent';
 import { PluginEvent, PluginEventType, NoteUpdateEvent } from './PluginEvent';
 import { NotesByOSISRef } from './FetchDataResult';
-import JoplinSettings from 'api/JoplinSettings';
 import { RefsNotesDB } from './RefsNotesDB';
 
 /**
@@ -64,12 +62,12 @@ export namespace BibleNotes {
 
                 case WebviewEventType.GET_SETTING:
                     console.log('Get setting event', event.setting);
-					if (event.setting === "locale") {
-						return joplin.settings.globalValue(event.setting);
-					} else {
-						// Unknown setting
-						return;
-					}
+                    if (event.setting === 'locale') {
+                        return joplin.settings.globalValue(event.setting);
+                    } else {
+                        // Unknown setting
+                        return;
+                    }
 
                 default:
                     console.log('Unhandled message ' + event);

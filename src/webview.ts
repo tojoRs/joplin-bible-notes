@@ -9,7 +9,6 @@ import {
     WebviewEventType,
 } from './WebviewEvent';
 import React = require('react');
-import { pathToFileURL } from 'url';
 import { PluginEvent, PluginEventType } from './PluginEvent';
 import { NotesByOSISRef } from './FetchDataResult';
 import { OSISRef } from './models/OSISRef';
@@ -23,7 +22,6 @@ function onPluginMessage(message) {
     var event: PluginEvent = message.message;
     switch (event.type) {
         case PluginEventType.NOTE_UPDATE:
-            console.log('Note Data - ', event.value);
             noteUpdateFunc();
             break;
         default:
@@ -43,7 +41,7 @@ function noteClickCallback(noteId: string) {
 }
 
 async function fetchAllData(): Promise<NotesByOSISRef> {
-    console.log('Callback : Fetching all data');
+    console.debug('Callback : Fetching all data');
     return webviewApi
         .postMessage(new FetchDataEvent('_all_'))
         .then((event: PluginEvent) => {
@@ -59,7 +57,7 @@ async function fetchAllData(): Promise<NotesByOSISRef> {
                 });
                 return data;
             } else {
-                console.log('Got another response : ', event.value);
+                console.debug('Got another response : ', event.value);
                 throw Error('Unknown response');
             }
         });

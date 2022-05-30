@@ -16,6 +16,10 @@ export const StyledNoteItem = styled.div`
     max-width: 100%;
     align-items: stretch;
     border-bottom: 1px solid grey;
+
+	&:hover {
+		background-color: var(--joplin-background-color-hover3);
+	}
 `;
 
 interface IStyledSectionProps {

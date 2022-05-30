@@ -226,23 +226,34 @@ export class Section extends React.Component<ISectionProps, ISectionState> {
             }
         });
 
-        return (
-            <StyledSection
-                className="section"
-                id={this.props.id}
-                height={this.props.height}>
-                <StyledItemHeader>
-                    <ExpandIcon
-                        isExpanded={this.state.isExpanded}
-                        onClick={this.toggleExpand}
-                    />
-                    <StyledTitle className="title">
-                        {LL[this.props.id]()}
-                    </StyledTitle>
-                </StyledItemHeader>
-                {this.state.isExpanded == true ? elements : null}
-            </StyledSection>
-        );
+        if (this.props.id === 'root') {
+            return (
+                <StyledSection
+                    className="section"
+                    id={this.props.id}
+                    height={this.props.height}>
+                    {elements}
+                </StyledSection>
+            );
+        } else {
+            return (
+                <StyledSection
+                    className="section"
+                    id={this.props.id}
+                    height={this.props.height}>
+                    <StyledItemHeader>
+                        <ExpandIcon
+                            isExpanded={this.state.isExpanded}
+                            onClick={this.toggleExpand}
+                        />
+                        <StyledTitle className="title">
+                            {LL[this.props.id]()}
+                        </StyledTitle>
+                    </StyledItemHeader>
+                    {this.state.isExpanded == true ? elements : null}
+                </StyledSection>
+            );
+        }
     }
 }
 

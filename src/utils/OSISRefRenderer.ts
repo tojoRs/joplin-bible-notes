@@ -1,23 +1,16 @@
 'use strict';
 
 import { OSISRef, OSISRefType } from '../models/OSISRef';
+import { BookNameProvider } from './BookNameProvider';
 
 export class OSISRefRenderer {
+    bookNameProvider: BookNameProvider;
 
-    static getDataForLocale(lang: string): any {
-		// TODO Need to do something if the file is not found.
-        return require(`./bible_locales/${lang}.json`);
+    constructor(booknameProvider: BookNameProvider) {
+        this.bookNameProvider = booknameProvider;
     }
 
-    static bookNameFromOSISName(lang: string, OSISName: string): string {
-        let hrBookName = OSISRefRenderer.getDataForLocale(lang)[OSISName];
-        if (hrBookName === undefined) {
-            throw new Error(`Unknown bookname ${OSISName} in language ${lang}`);
-        }
-        return hrBookName;
-    }
-
-    static getHumanReadableString(lang: string, osisString: string): string {
+    render(osisString: string): string {
         let osisRef = new OSISRef(osisString);
         let resultString = '';
         try {
@@ -30,8 +23,7 @@ export class OSISRefRenderer {
                     //
                     if (begin.bookName == end.bookName) {
                         // The books are the same
-                        resultString += OSISRefRenderer.bookNameFromOSISName(
-                            lang,
+                        resultString += this.bookNameProvider.getBookName(
                             begin.bookName,
                         );
                         if (begin.chapter == end.chapter) {
@@ -53,15 +45,9 @@ export class OSISRefRenderer {
                     } else {
                         // The books are not the same
                         resultString =
-                            OSISRefRenderer.getHumanReadableString(
-                                lang,
-                                osisRef.parts[0],
-                            ) +
+                            this.render(osisRef.parts[0]) +
                             '-' +
-                            OSISRefRenderer.getHumanReadableString(
-                                lang,
-                                osisRef.parts[1],
-                            );
+                            this.render(osisRef.parts[1]);
                     }
                     return resultString;
                     break;
@@ -71,10 +57,7 @@ export class OSISRefRenderer {
                     let bookName = parts.bookName;
                     let chapter = parts.chapter;
                     let verse = parts.verse;
-                    resultString += OSISRefRenderer.bookNameFromOSISName(
-                        lang,
-                        bookName,
-                    );
+                    resultString += this.bookNameProvider.getBookName(bookName);
 
                     if (chapter !== undefined) {
                         resultString += ' ' + chapter;
@@ -93,9 +76,4 @@ export class OSISRefRenderer {
             return resultString;
         }
     } // end
-
-    static render(osisString: string, locale: string): string {
-        // TODO
-        return '';
-    }
 }

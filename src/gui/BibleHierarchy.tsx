@@ -70,6 +70,8 @@ interface IBibleHierarchyState {
 }
 
 export class NoteItem extends React.Component<INoteProps> {
+    static contextType = I18nContext;
+
     constructor(props) {
         super(props);
         // Check if I need to bind handleClick.
@@ -81,16 +83,22 @@ export class NoteItem extends React.Component<INoteProps> {
     }
 
     render() {
+        const { locale, LL, setLocale }: typeof I18nContext = this.context;
+
+        // Encapsulate LL...
+        var osisRefRenderer = new OSISRefRenderer({
+            getBookName: (bookName) => {
+                return LL[bookName]();
+            },
+        });
+
         return (
             <StyledNoteItem>
                 <StyledNoteAnchor
                     href="#"
                     id={this.props.noteInfo.noteID}
                     onClick={this.handleClick}>
-                    {OSISRefRenderer.getHumanReadableString(
-                        'fr',
-                        this.props.osisRef.toString(),
-                    )}{' '}
+                    {osisRefRenderer.render(this.props.osisRef.toString())}{' '}
                     -&nbsp;
                     {this.props.noteInfo.noteTitle}
                 </StyledNoteAnchor>

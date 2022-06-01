@@ -11,15 +11,20 @@ export const StyledNoteItem = styled.div`
     box-sizing: border-box;
     height: 30px;
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     transition: 0.1s;
     max-width: 100%;
     align-items: stretch;
-    border-bottom: 1px solid grey;
 
-	&:hover {
-		background-color: var(--joplin-background-color-hover3);
-	}
+    &:hover {
+        background-color: var(--joplin-background-color-hover3);
+    }
+
+    &::after {
+        content: '';
+        width: 100%;
+        border-bottom: 1px solid #dddddd;
+    }
 `;
 
 interface IStyledSectionProps {
@@ -54,6 +59,8 @@ export const StyledNoteAnchor = styled.a`
     height: 100%;
     color: var(--joplin-color);
     align-items: center;
+
+    padding-left: 16px;
 `;
 
 export const StyledTitle = styled.span`
@@ -66,6 +73,8 @@ export const StyledItemHeader = styled.div`
     display: flex;
     height: 30px;
     min-height: 30px;
+
+    border-bottom: 1px solid black;
 `;
 
 export function ExpandIcon(props: any) {

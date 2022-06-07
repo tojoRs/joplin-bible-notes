@@ -1,5 +1,15 @@
 const tap = require('tap');
-import { OSISRef } from '../src/models/OSISRef';
+import { OSISRef, OSISRefType } from '../src/models/OSISRef';
+
+tap.test('OSISRef from JSON', (t) => {
+    var ref1: OSISRef = OSISRef.fromJSON({ osisID: 'Gen.1.2' });
+    t.match(
+        ref1,
+        { osisID: 'Gen.1.2', type: OSISRefType.SIMPLE },
+        `OSISRef ${ref1.toString()} from JSON is good !!!`,
+    );
+    t.end();
+});
 
 tap.test('OSISRef simple comparison.', (t) => {
     var t1: OSISRef = new OSISRef('Matt.1.1');
@@ -44,11 +54,9 @@ tap.test('OSISRef range comparison.', (t) => {
     t.ok(t1.compare(t2) < 0, `{t1.toString()} is before {t2.toString()}`);
     t.ok(t2.compare(t1) > 0, `{t1.toString()} is still before {t2.toString()}`);
 
-	t1 = new OSISRef('Acts.1.5-1Cor.12.13');
-	t2 = new OSISRef('Acts.1');
+    t1 = new OSISRef('Acts.1.5-1Cor.12.13');
+    t2 = new OSISRef('Acts.1');
     t.ok(t1.compare(t2) > 0, `{t2.toString()} is before {t1.toString()}`);
     t.ok(t2.compare(t1) < 0, `{t2.toString()} is still before {t1.toString()}`);
     t.end();
-
 });
-

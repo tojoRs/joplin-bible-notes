@@ -41,14 +41,6 @@ export const StyledSection = styled.div<IStyledSectionProps>`
     height: ${(props: any) => (props.height ? props.height + 'px' : 'auto')};
 `;
 
-export const StyledBook = styled.div`
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-    transition: 0.1s;
-    margin-left: 16px;
-`;
-
 export const StyledNoteAnchor = styled.a`
     text-decoration: none;
     cursor: default;

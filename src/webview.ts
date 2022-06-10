@@ -40,6 +40,10 @@ function noteClickCallback(noteId: string) {
     webviewApi.postMessage(new ClickNoteEvent(noteId));
 }
 
+async function pollLastChanged(): Promise<NotesByOSISRef> {
+	return null;
+}
+
 async function fetchAllData(): Promise<NotesByOSISRef> {
     console.debug('Callback : Fetching all data');
     return webviewApi

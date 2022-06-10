@@ -98,8 +98,17 @@ export enum OSISRefType {
 }
 
 export class OSISRef {
+	/**
+	 * Contains the original OSIS string
+	 * */	
     osisID: string;
+
+	/**
+	 * Contains 1 or 2 elements. It this OSISRef is a range, then 
+	 * the first element is the beginning and the second element is the end
+	 * */
     parts: string[];
+
     type: OSISRefType;
 
     static cv_separator: string = ',';
@@ -214,6 +223,26 @@ export class OSISRef {
     isEqual(osisRef: OSISRef): boolean {
         return osisRef.osisID == this.osisID;
     }
+
+	inOldTestament() : boolean {
+		// If the reference is before the Gospel of Matthew, then it is in the Old Testament.
+		if (this.type == OSISRefType.SIMPLE) {
+			return OSISRef.compareSimpleRefString(this.osisID, "Matt") < 0;
+		} else {
+			// This is a RANGE
+			return OSISRef.compareSimpleRefString(this.parts[0], "Matt") < 0;
+		}
+	}
+
+	inNewTestament() : boolean {
+		if (this.type == OSISRefType.SIMPLE) {
+			return !this.inOldTestament();
+		} else {
+			// This is a RANGE
+			let end = new OSISRef(this.parts[1]);
+			return !end.inOldTestament();
+		}
+	}
 
     static isValidOSISRef(s: string): boolean {
         // TODO

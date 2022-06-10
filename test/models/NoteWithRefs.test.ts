@@ -1,6 +1,6 @@
 const tap = require('tap');
-import { OSISRef } from '../src/models/OSISRef';
-import { NoteWithRefs } from '../src/models/NoteWithRefs';
+import { OSISRef } from '../../src/models/OSISRef';
+import { NoteWithRefs } from '../../src/models/NoteWithRefs';
 
 tap.test('NoteWithRefs from JSON tests', (t) => {
     var n1 = NoteWithRefs.fromJSON({

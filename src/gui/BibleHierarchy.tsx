@@ -1,15 +1,15 @@
 import * as React from 'react';
-import { hierarchy } from '../models/hierarchy';
-import { NoteInfo, NotesByOSISRef } from '../FetchDataResult';
+import { NoteInfo } from '../models/NoteInfo';
+import { NotesByOSISRef } from '../FetchDataResult';
 import { OSISRef } from '../models/OSISRef';
 import { OSISRefRenderer } from '../utils/OSISRefRenderer';
 import { I18nContext } from '../i18n/i18n-react';
+import { NotesTree, NotesNode } from '../models/NotesTree';
 
 const styled = require('styled-components').default;
 
 import {
     ExpandIcon,
-    StyledBook,
     StyledItemHeader,
     StyledNoteAnchor,
     StyledNoteItem,
@@ -20,32 +20,15 @@ import {
 
 interface ISectionProps {
     id: string;
-    tree?: any;
-    label?: string;
-    notes?: NotesByOSISRef[];
+    notesNode?: NotesNode;
     height?: number;
+    level: number;
     isExpanded?: boolean;
     fetchDataCallback: Function;
     noteClickCallback: Function;
-}
-
-interface IBookProps {
-    id: string;
-    tree?: any;
-    label: string;
-    isExpanded?: boolean;
-    notes?: NotesByOSISRef[];
-    fetchDataCallback: Function;
-    noteClickCallback: Function;
-}
-
-interface IBookState {
-    notes: NotesByOSISRef[];
-    isExpanded?: boolean;
 }
 
 interface ISectionState {
-    notes: NotesByOSISRef[];
     isExpanded?: boolean;
     height?: number;
 }
@@ -65,7 +48,7 @@ interface IBibleHierarchyProps {
 }
 
 interface IBibleHierarchyState {
-    notes?: NotesByOSISRef[];
+    notesTree: NotesTree;
     rootHeight?: number;
 }
 
@@ -107,75 +90,12 @@ export class NoteItem extends React.Component<INoteProps> {
     }
 }
 
-export class Book extends React.Component<IBookProps, IBookState> {
-    static contextType = I18nContext;
-
-    constructor(props) {
-        super(props);
-        this.state = {
-            notes: this.props.notes === undefined ? [] : this.props.notes,
-            isExpanded:
-                this.props.isExpanded === undefined
-                    ? true
-                    : this.props.isExpanded,
-        };
-        this.toggleExpand = this.toggleExpand.bind(this);
-    }
-
-    toggleExpand() {
-        this.setState((state) => {
-            return { isExpanded: !state.isExpanded };
-        });
-    }
-
-    render() {
-        const { locale, LL, setLocale }: typeof I18nContext = this.context;
-        if (this.props.notes.length == 0) return null;
-        else {
-            // Generate notes.
-            var orderedNotes = this.props.notes.sort((n1, n2) => {
-                return n1.osisRef.compare(n2.osisRef);
-            });
-
-            var noteElements = orderedNotes.map((notes, _index, _array) => {
-                var osisRef = notes.osisRef;
-                var osisRefElements = notes.notes.map((noteInfo, i, a) => {
-                    return (
-                        <NoteItem
-                            noteInfo={noteInfo}
-                            osisRef={osisRef}
-                            noteClickCallback={this.props.noteClickCallback}
-                        />
-                    );
-                });
-                return <>{osisRefElements}</>;
-            });
-
-            return (
-                <StyledBook className="book">
-                    <StyledItemHeader>
-                        <ExpandIcon
-                            isExpanded={this.state.isExpanded}
-                            onClick={this.toggleExpand}
-                        />
-                        <StyledTitle className="title">
-                            {LL[this.props.id]()} ({this.props.notes.length})
-                        </StyledTitle>
-                    </StyledItemHeader>
-                    {this.state.isExpanded == true ? noteElements : null}
-                </StyledBook>
-            );
-        }
-    }
-} // end class Book
-
 export class Section extends React.Component<ISectionProps, ISectionState> {
     static contextType = I18nContext;
 
     constructor(props) {
         super(props);
         this.state = {
-            notes: this.props.notes === undefined ? [] : this.props.notes,
             isExpanded:
                 this.props.isExpanded === undefined
                     ? true
@@ -187,7 +107,7 @@ export class Section extends React.Component<ISectionProps, ISectionState> {
     }
 
     componentDidUpdate() {
-        console.log(this.props.label + ' section updated.');
+        console.log(this.props.id + ' section updated.');
     }
 
     toggleExpand() {
@@ -197,42 +117,52 @@ export class Section extends React.Component<ISectionProps, ISectionState> {
     }
 
     render() {
-        var lHierarchy = this.props.tree;
         const { locale, LL, setLocale }: typeof I18nContext = this.context;
 
-        const elements = Object.keys(lHierarchy.elements).map((elementId) => {
-            if (lHierarchy.elements[elementId].type === 'section') {
-                return (
-                    <Section
-                        key={elementId}
-                        id={elementId}
-                        label={lHierarchy.elements[elementId].label}
-                        tree={lHierarchy.elements[elementId]}
-                        fetchDataCallback={this.props.fetchDataCallback}
-                        noteClickCallback={this.props.noteClickCallback}
-                        notes={this.props.notes}
-                    />
-                );
-            } else if (lHierarchy.elements[elementId].type === 'book') {
-                // Generate the notes for this book
-                var notes = this.props.notes.filter((notesByOSISRef) => {
-                    return notesByOSISRef
-                        .referenceString()
-                        .startsWith(elementId);
+        var noteElements = null;
+        if (this.props.notesNode.getNotes().length > 0) {
+            // Generate notes.
+            noteElements = this.props.notesNode
+                .getNotes()
+                .map((refNote, _index, _array) => {
+                    return (
+                        <NoteItem
+                            noteInfo={refNote.noteInfo}
+                            osisRef={refNote.osisRef}
+                            noteClickCallback={this.props.noteClickCallback}
+                        />
+                    );
                 });
-                return (
-                    <Book
-                        key={elementId}
-                        id={elementId}
-                        label={lHierarchy.elements[elementId].label}
-                        tree={lHierarchy.elements[elementId]}
+        } // end if
+
+        var sectionElements = [];
+        console.log('children = ', this.props.notesNode.getChildren());
+        if (this.props.notesNode.getChildren().size > 0) {
+            var children = this.props.notesNode.getChildren();
+            children.forEach((notesNode, id) => {
+                var element = (
+                    <Section
+                        key={id}
+                        id={id}
+                        level={this.props.level + 1}
                         fetchDataCallback={this.props.fetchDataCallback}
                         noteClickCallback={this.props.noteClickCallback}
-                        notes={notes}
+                        notesNode={notesNode}
                     />
                 );
-            }
-        });
+                sectionElements.push(element);
+            });
+        }
+
+        var displayedElements = null;
+        if (this.state.isExpanded) {
+            displayedElements = (
+                <>
+                    {noteElements}
+                    {sectionElements}
+                </>
+            );
+        }
 
         if (this.props.id === 'root') {
             return (
@@ -240,7 +170,7 @@ export class Section extends React.Component<ISectionProps, ISectionState> {
                     className="section"
                     id={this.props.id}
                     height={this.props.height}>
-                    {elements}
+                    {displayedElements}
                 </StyledSection>
             );
         } else {
@@ -255,14 +185,15 @@ export class Section extends React.Component<ISectionProps, ISectionState> {
                             onClick={this.toggleExpand}
                         />
                         <StyledTitle className="title">
-                            {LL[this.props.id]()}
+                            {LL[this.props.id]()} (
+                            {this.props.notesNode.notesCount()})
                         </StyledTitle>
                     </StyledItemHeader>
-                    {this.state.isExpanded == true ? elements : null}
+                    {displayedElements}
                 </StyledSection>
             );
         }
-    }
+    } // end render
 }
 
 export class BibleHierarchy extends React.Component<
@@ -275,8 +206,9 @@ export class BibleHierarchy extends React.Component<
 
     constructor(props) {
         super(props);
+
         this.state = {
-            notes: this.props.notes === undefined ? [] : this.props.notes,
+            notesTree: BibleHierarchy.notesToNotesTree(this.props.notes),
             rootHeight:
                 this.props.rootHeight === undefined
                     ? undefined
@@ -288,6 +220,19 @@ export class BibleHierarchy extends React.Component<
         window.addEventListener('resize', this.resize);
     }
 
+    static notesToNotesTree(notesBy: NotesByOSISRef[]): NotesTree {
+        var notesTree = new NotesTree();
+
+        // empty Array
+        if (!notesBy) return notesTree;
+
+        for (var i in notesBy) {
+            var osisRef = notesBy[i].osisRef;
+            notesTree.addNotes(osisRef, notesBy[i].notes);
+        }
+        return notesTree;
+    }
+
     componentWillUnmount() {
         window.removeEventListener('resize', this.resize);
     }
@@ -296,7 +241,9 @@ export class BibleHierarchy extends React.Component<
         // Propagate the received state to the children.
         // TODO Fix according to the updateQuery string.
         // Here, it's easy when we replace all...
-        this.setState({ notes: data });
+        console.log('update data');
+        console.log(data);
+        this.setState({ notesTree: BibleHierarchy.notesToNotesTree(data) });
     }
 
     resize() {
@@ -319,6 +266,7 @@ export class BibleHierarchy extends React.Component<
     render() {
         const { locale, LL, setLocale }: typeof I18nContext = this.context;
 
+        console.log(this.state.notesTree);
         const MainTitle = styled(StyledTitle)`
             padding: 8px;
             align: center;
@@ -332,13 +280,12 @@ export class BibleHierarchy extends React.Component<
                 <Section
                     key="root"
                     id="root"
+                    level={0}
                     height={this.state.rootHeight}
                     isExpanded={true}
-                    label={hierarchy.label}
-                    tree={hierarchy}
                     fetchDataCallback={this.fetchData}
                     noteClickCallback={this.props.noteClickCallback}
-                    notes={this.state.notes}
+                    notesNode={this.state.notesTree}
                 />
             </StyledRoot>
         );

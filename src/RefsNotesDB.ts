@@ -144,7 +144,7 @@ export class RefsNotesDB {
         }
         Cache.setNote(note['id'], tNote);
         if (!isSame) {
-            // I need to update the dictonaries
+            // I need to update the dictionaries
             this.removeNote(noteId);
             this.addNote(tNote);
         }

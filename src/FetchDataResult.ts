@@ -1,11 +1,7 @@
 'use strict';
 
 import { OSISRef } from './models/OSISRef';
-
-export interface NoteInfo {
-    noteID: string;
-    noteTitle: string;
-}
+import { NoteInfo } from './models/NoteInfo';
 
 export class NotesByOSISRef {
     notes: NoteInfo[];

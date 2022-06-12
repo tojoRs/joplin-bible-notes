@@ -2,7 +2,7 @@
 
 import { NoteInfo } from './NoteInfo';
 import { OSISRef } from './OSISRef';
-import { pathFromOSISRef } from './OSISPath';
+import { pathFromOSISRef, compareStructureIds } from './OSISPath';
 
 export interface RefNote {
     osisRef: OSISRef;
@@ -61,22 +61,15 @@ export class NotesNode {
                 let child = new NotesNode(path[0]);
                 child.addNoteToPath(osisRef, path.slice(1), noteInfo);
 
-                // Place 'NT' after 'OT'
-                if (path[0] == 'OT' && this.children.size > 0) {
-                    // Get the already existing 'NT' node
-                    if (this.children.size > 1) {
-                        throw new Error(
-                            'There are more Bible sections than expected',
-                        );
-                    }
-
-                    var ntNode = this.children.get('NT');
-                    this.children = new Map<string, NotesNode>();
-                    this.children.set(path[0], child);
-                    this.children.set('NT', ntNode);
-                } else {
-                    this.children.set(path[0], child);
-                }
+                // Order keys. Working but I think very costly
+				// The problem of this is that they cannot be reordered at will.
+                this.children.set(path[0], child);
+                var orderedMap = new Map<string, NotesNode>(
+                    [...this.children.entries()].sort((child1, child2) => {
+                        return compareStructureIds(child1[0], child2[0]);
+                    }),
+                );
+                this.children = orderedMap;
             }
         }
     }

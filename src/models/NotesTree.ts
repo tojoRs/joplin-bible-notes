@@ -28,21 +28,23 @@ export class NotesNode {
         return this.notes;
     }
 
-	notesCount() : number {
-		var childrenNotesCount = 0;
-		this.children.forEach((node, key) => {
-			childrenNotesCount += node.notesCount();
-		});
+    notesCount(): number {
+        var childrenNotesCount = 0;
+        this.children.forEach((node, key) => {
+            childrenNotesCount += node.notesCount();
+        });
 
-		return childrenNotesCount + this.notes.length; 
-	}
+        return childrenNotesCount + this.notes.length;
+    }
 
     addNoteToPath(osisRef: OSISRef, path: string[], noteInfo: NoteInfo) {
         if (path.length == 0) {
             if (
                 this.notes.find((refNoteElement) => {
-                    return refNoteElement.noteInfo.noteID == noteInfo.noteID &&
-						refNoteElement.osisRef.isEqual(osisRef);
+                    return (
+                        refNoteElement.noteInfo.noteID == noteInfo.noteID &&
+                        refNoteElement.osisRef.isEqual(osisRef)
+                    );
                 }) === undefined
             ) {
                 this.notes.push({ osisRef: osisRef, noteInfo: noteInfo });
@@ -97,7 +99,7 @@ export class NotesTree extends NotesNode {
         }
     }
 
-	notesCount() : number {
-		return super.notesCount();
-	}
+    notesCount(): number {
+        return super.notesCount();
+    }
 }

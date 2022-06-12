@@ -2,11 +2,20 @@
 const tap = require('tap');
 
 import { OSISRef } from '../../src/models/OSISRef';
-import { pathFromOSISRef } from '../../src/models/OSISPath';
+import { pathFromOSISRef, pathFromStructure } from '../../src/models/OSISPath';
+import { BIBLE_STRUCTURE_NO_DEUTERO } from '../../src/models/BibleStructures';
 
 tap.test('OSIS path test', (t) => {
+
     var o1: OSISRef = new OSISRef('Matt.1.1');
     var p1: string[] = pathFromOSISRef(o1);
+
+    t.match(
+        pathFromStructure(o1, BIBLE_STRUCTURE_NO_DEUTERO),
+        ['NT', 'Matt'],
+        `OSISRef ${o1.toString()} path !!! ${p1}`,
+    );
+
     t.match(
         p1,
         ['NT', 'Matt'],
@@ -48,3 +57,4 @@ tap.test('OSIS path test', (t) => {
 
     t.end();
 });
+

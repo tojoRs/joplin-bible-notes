@@ -10,9 +10,7 @@
         "update": "npm install generator-joplin && ./node_modules/.bin/yo joplin --update"
     },
     "license": "MIT",
-    "keywords": [
-        "joplin-plugin"
-    ],
+    "keywords": ["joplin-plugin", "Bible", "references"],
     "devDependencies": {
         "@types/node": "^17.0.36",
         "@types/react": "^18.0.9",
@@ -41,7 +39,5 @@
         "typesafe-i18n": "^5.4.3",
         "yo": "^4.3.0"
     },
-    "files": [
-        "publish"
-    ]
+    "files": ["publish"]
 }

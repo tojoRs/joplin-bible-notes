@@ -10,7 +10,7 @@ import {
 } from './WebviewEvent';
 import React = require('react');
 import { PluginEvent, PluginEventType } from './PluginEvent';
-import { NotesByOSISRef } from './FetchDataResult';
+import { NoteWithRefs } from './models/NoteWithRefs';
 import { OSISRef } from './models/OSISRef';
 import { Locales } from './i18n/i18n-types';
 
@@ -22,7 +22,7 @@ function onPluginMessage(message) {
     var event: PluginEvent = message.message;
     switch (event.type) {
         case PluginEventType.NOTE_UPDATE:
-            noteUpdateFunc();
+            noteUpdateFunc(event.value);
             break;
         default:
             console.log('Unknown message -', event);
@@ -40,24 +40,14 @@ function noteClickCallback(noteId: string) {
     webviewApi.postMessage(new ClickNoteEvent(noteId));
 }
 
-async function pollLastChanged(): Promise<NotesByOSISRef> {
-	return null;
-}
-
-async function fetchAllData(): Promise<NotesByOSISRef> {
+async function fetchAllData(): Promise<NoteWithRefs[]> {
     console.debug('Callback : Fetching all data');
     return webviewApi
         .postMessage(new FetchDataEvent('_all_'))
         .then((event: PluginEvent) => {
             if (event.type == PluginEventType.FETCH_RESULT) {
-                var data = event.value.map((notesByOSISRef) => {
-                    var p = new NotesByOSISRef(
-                        new OSISRef(notesByOSISRef.osisRef.osisID),
-                    );
-                    notesByOSISRef.notes.forEach((noteInfo) => {
-                        p.addNoteInfo(noteInfo.noteID, noteInfo.noteTitle);
-                    });
-                    return p;
+                var data = event.value.map((noteWithRefs) => {
+                    return NoteWithRefs.fromJSON(noteWithRefs);
                 });
                 return data;
             } else {
@@ -91,11 +81,11 @@ function createBibleNotesPanel(locale: Locales) {
 function start() {
     webviewApi.postMessage(new GetSettingEvent('locale')).then(
         (locale) => {
-			var l : Locales = locale.split('_')[0];
+            var l: Locales = locale.split('_')[0];
             createBibleNotesPanel(l);
         },
 
-		// Defaulting to fr.
+        // Defaulting to fr.
         () => {
             createBibleNotesPanel('fr');
         },

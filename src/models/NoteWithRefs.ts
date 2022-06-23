@@ -1,31 +1,31 @@
 import { OSISRef } from './OSISRef';
+import { NoteInfo } from './NoteInfo';
 
-export type OSISRefDiff = {
+export interface OSISRefOffset {
     added: OSISRef[];
     removed: OSISRef[];
 };
 
-export class NoteWithRefs {
+export class NoteWithRefs implements NoteInfo {
     refs: OSISRef[];
-    title: string;
-    id: string;
+    noteTitle: string;
+    noteID: string;
 
     constructor(id: string, title: string, refs: OSISRef[]) {
-        this.id = id;
+        this.noteID = id;
         var orderedRefs: OSISRef[] = refs.sort((ref1, ref2) => {
             return ref1.compare(ref2);
         });
         this.refs = orderedRefs;
-        this.title = title;
+        this.noteTitle = title;
     }
 
     static fromJSON(o): NoteWithRefs {
         var refs: OSISRef[] = [];
         for (var i in o['refs']) {
-			console.log(i);
             refs.push(OSISRef.fromJSON(o['refs'][i]));
         }
-        return new NoteWithRefs(o['id'], o['title'], refs);
+        return new NoteWithRefs(o['noteID'], o['noteTitle'], refs);
     }
 
     addOSISRef(osisRef: OSISRef): void {
@@ -48,11 +48,11 @@ export class NoteWithRefs {
 	}
 
     /**
-     * Returns the OSIS references that have been added from by the other object o,
+     * Returns the OSIS references that have been added to the other object o,
      * and the OSISReferences that have been removed to the other object o.
-     * @return An OSISRefDiff object.
+     * @return An OSISRefOffset object defining added and removed OSIS references
      * */
-    diffs(o: NoteWithRefs): OSISRefDiff {
+    offset(o: NoteWithRefs): OSISRefOffset {
         var added: OSISRef[];
         var removed: OSISRef[];
 
@@ -66,7 +66,7 @@ export class NoteWithRefs {
     }
 
     hasSameRefsAs(o: NoteWithRefs): Boolean {
-        var diff: OSISRefDiff = this.diffs(o);
+        var diff: OSISRefOffset = this.offset(o);
         return !diff.added.length && !diff.removed.length;
     }
 }
@@ -89,6 +89,6 @@ export class TNoteWithRefs extends NoteWithRefs {
         for (var i in o['refs']) {
             refs.push(OSISRef.fromJSON(o['refs'][i]));
         }
-        return new TNoteWithRefs(o['id'], o['title'], refs, o['updatedTime']);
+        return new TNoteWithRefs(o['noteID'], o['noteTitle'], refs, o['updatedTime']);
     }
 }

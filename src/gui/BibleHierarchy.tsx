@@ -1,10 +1,11 @@
 import * as React from 'react';
 import { NoteInfo } from '../models/NoteInfo';
-import { NotesByOSISRef } from '../FetchDataResult';
 import { OSISRef } from '../models/OSISRef';
+import { NoteWithRefs } from '../models/NoteWithRefs';
 import { OSISRefRenderer } from '../utils/OSISRefRenderer';
 import { I18nContext } from '../i18n/i18n-react';
-import { NotesTree, NotesNode } from '../models/NotesTree';
+import { NotesNode } from '../models/NotesTree';
+import { NotesTreeStore } from '../models/NotesTreeStore';
 
 const styled = require('styled-components').default;
 
@@ -44,11 +45,11 @@ interface IBibleHierarchyProps {
     fetchDataCallback: Function;
     noteClickCallback: Function;
     noteUpdateWrapper: Function;
-    notes?: NotesByOSISRef[];
+    notes?: NoteWithRefs[];
 }
 
 interface IBibleHierarchyState {
-    notesTree: NotesTree;
+    notesTree: NotesTreeStore;
     rootHeight?: number;
 }
 
@@ -106,9 +107,7 @@ export class Section extends React.Component<ISectionProps, ISectionState> {
         this.toggleExpand = this.toggleExpand.bind(this);
     }
 
-    componentDidUpdate() {
-        console.log(this.props.id + ' section updated.');
-    }
+    componentDidUpdate() {}
 
     toggleExpand() {
         this.setState((state) => {
@@ -136,7 +135,6 @@ export class Section extends React.Component<ISectionProps, ISectionState> {
         } // end if
 
         var sectionElements = [];
-        console.log('children = ', this.props.notesNode.getChildren());
         if (this.props.notesNode.getChildren().size > 0) {
             var children = this.props.notesNode.getChildren();
             children.forEach((notesNode, id) => {
@@ -220,15 +218,13 @@ export class BibleHierarchy extends React.Component<
         window.addEventListener('resize', this.resize);
     }
 
-    static notesToNotesTree(notesBy: NotesByOSISRef[]): NotesTree {
-        var notesTree = new NotesTree();
+    static notesToNotesTree(notesWithRefs: NoteWithRefs[]): NotesTreeStore {
+        var notesTree = new NotesTreeStore();
 
-        // empty Array
-        if (!notesBy) return notesTree;
+        if (!notesWithRefs) return notesTree;
 
-        for (var i in notesBy) {
-            var osisRef = notesBy[i].osisRef;
-            notesTree.addNotes(osisRef, notesBy[i].notes);
+        for (var i in notesWithRefs) {
+            notesTree.addNoteWithRefs(notesWithRefs[i]);
         }
         return notesTree;
     }
@@ -237,36 +233,38 @@ export class BibleHierarchy extends React.Component<
         window.removeEventListener('resize', this.resize);
     }
 
-    updateData(data: NotesByOSISRef[], updateQuery: string): void {
-        // Propagate the received state to the children.
-        // TODO Fix according to the updateQuery string.
-        // Here, it's easy when we replace all...
-        console.log('update data');
-        console.log(data);
-        this.setState({ notesTree: BibleHierarchy.notesToNotesTree(data) });
-    }
-
     resize() {
         // We must send the new value to the root element.
         this.setState({
             rootHeight: window.innerHeight - this.titleRef.current.clientHeight,
         });
         console.log(
-            'Resize to ',
-            window.innerHeight - this.titleRef.current.clientHeight,
+            `Resize to ${
+                window.innerHeight - this.titleRef.current.clientHeight
+            }`,
         );
     }
 
+    noteUpdate(noteWithRefsJSON): void {
+        console.log('Note udpate function called', noteWithRefsJSON);
+        let n: NoteWithRefs = NoteWithRefs.fromJSON(noteWithRefsJSON);
+
+        this.setState((prevState) => {
+            var notesTree = prevState.notesTree;
+            notesTree.addNoteWithRefs(n);
+            return { notesTree: notesTree };
+        });
+    }
+
     fetchData() {
-        this.props.fetchDataCallback().then((data: NotesByOSISRef[]) => {
-            this.updateData(data, '_all_');
+        this.props.fetchDataCallback().then((data: NoteWithRefs[]) => {
+            this.setState({ notesTree: BibleHierarchy.notesToNotesTree(data) });
         });
     }
 
     render() {
         const { locale, LL, setLocale }: typeof I18nContext = this.context;
 
-        console.log(this.state.notesTree);
         const MainTitle = styled(StyledTitle)`
             padding: 8px;
             align: center;
@@ -292,7 +290,7 @@ export class BibleHierarchy extends React.Component<
     }
 
     componentDidMount(): void {
-        this.props.noteUpdateWrapper(this.fetchData.bind(this));
+        this.props.noteUpdateWrapper(this.noteUpdate.bind(this));
         this.resize();
         this.fetchData();
     }

@@ -4,15 +4,15 @@ import { NoteWithRefs } from '../../src/models/NoteWithRefs';
 
 tap.test('NoteWithRefs from JSON tests', (t) => {
     var n1 = NoteWithRefs.fromJSON({
-        id: '121212',
-        title: 'Note de test',
+        noteID: '121212',
+        noteTitle: 'Note de test',
         refs: [{ osisID: 'Gen.1.2' }],
     });
 
-    t.hasProps(n1, ['id', 'title', 'refs'], 'NoteWithRefs n1 has properties');
+    t.hasProps(n1, ['noteID', 'noteTitle', 'refs'], 'NoteWithRefs n1 has properties');
     t.match(
         n1,
-        { id: '121212', title: 'Note de test', refs: [{ osisID: 'Gen.1.2' }] },
+        { noteID: '121212', noteTitle: 'Note de test', refs: [{ osisID: 'Gen.1.2' }] },
         'NoteWithRefs n1 has properties and they match',
     );
 

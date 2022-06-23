@@ -5,7 +5,6 @@ import { OSISRef } from './models/OSISRef';
 import { NoteWithRefs, TNoteWithRefs } from './models/NoteWithRefs';
 import { ClickNoteEvent, WebviewEventType } from './WebviewEvent';
 import { PluginEvent, PluginEventType, NoteUpdateEvent } from './PluginEvent';
-import { NotesByOSISRef } from './FetchDataResult';
 import { RefsNotesDB } from './RefsNotesDB';
 
 /**
@@ -42,18 +41,19 @@ export namespace BibleNotes {
                         'Plugin received event FETCH_DATA : ' + event.query,
                     );
 
-                    var notesByOSISRef = [];
-                    if (event.query == '_all_') {
-                        notesByOSISRef = gRefsNotesDB.getNotesForOSISRef('');
+                    var notesWithRefs = [];
+                    if (event.query === '_all_') {
+                        notesWithRefs = gRefsNotesDB.getNotesWithRefs();
                     } else {
-                        notesByOSISRef = gRefsNotesDB.getNotesForOSISRef(
-                            event.query,
+                        throw new Error(
+                            `Case not handled on event FETCH_DATA : ${event.query}`,
                         );
                     }
                     var resultEvent = new PluginEvent(
                         PluginEventType.FETCH_RESULT,
                     );
-                    resultEvent.value = notesByOSISRef;
+                    console.log(notesWithRefs);
+                    resultEvent.value = notesWithRefs;
                     return resultEvent;
 
                 case WebviewEventType.ACCEPT_RESPONSE:
@@ -114,7 +114,7 @@ export namespace BibleNotes {
             if (changed) {
                 joplin.views.panels.postMessage(
                     panel,
-                    new NoteUpdateEvent(event.id),
+                    new NoteUpdateEvent(gRefsNotesDB.getNoteFromID(event.id)),
                 );
             }
         };

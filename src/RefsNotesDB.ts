@@ -3,44 +3,6 @@ import { OSISRef } from './models/OSISRef';
 import { NoteWithRefs, TNoteWithRefs } from './models/NoteWithRefs';
 import { ReferenceMatcher } from './ReferenceMatcher';
 import { Cache } from './Cache';
-import { NotesByOSISRef } from './FetchDataResult';
-
-class OSISRefsMap extends Map<string, NotesByOSISRef> {
-    constructor() {
-        super();
-    }
-
-    addNote(noteWithRefs: NoteWithRefs): void {
-        var refs = noteWithRefs.refs;
-        refs.forEach((r, i, a) => {
-            const refString = r.toString();
-            if (refString in super.keys()) {
-                var n: NotesByOSISRef = super.get(refString);
-                if (!n.hasNote(noteWithRefs.id)) {
-                    n.addNoteInfo(noteWithRefs.id, noteWithRefs.title);
-                }
-            } else {
-                super.set(refString, new NotesByOSISRef(r));
-                super
-                    .get(refString)
-                    .addNoteInfo(noteWithRefs.id, noteWithRefs.title);
-            }
-        });
-    }
-
-    removeNote(note: NoteWithRefs) {
-        var noteId: string = note.id;
-        note.refs.forEach((osisRef, i, a) => {
-            var refString = osisRef.toString();
-            var notesByOSISRefs: NotesByOSISRef = super.get(refString);
-            notesByOSISRefs.removeNote(noteId);
-
-            if (notesByOSISRefs.notes.length == 0) {
-                super.delete(refString);
-            }
-        });
-    }
-} // end class
 
 class NotesMap extends Map<string, NoteWithRefs> {
     constructor() {
@@ -53,18 +15,12 @@ class NotesMap extends Map<string, NoteWithRefs> {
  * */
 export class RefsNotesDB {
     /**
-     * A dictionary of the Notes indexed by the OSISRef's string
-     * */
-    private osisRefsMap: OSISRefsMap;
-
-    /**
      * A Dictionary of the notes indexed by the note_id
      * */
     private notesMap: NotesMap;
 
     constructor() {
         this.notesMap = new NotesMap();
-        this.osisRefsMap = new OSISRefsMap();
         this.fillDB();
     }
 
@@ -122,7 +78,25 @@ export class RefsNotesDB {
     }
 
     getNotesWithRefs(): NoteWithRefs[] {
+        console.log(this.notesMap);
         return Array.from(this.notesMap.values());
+    }
+
+    async hasTitleChanged(noteId: string): Promise<Boolean> {
+        const note = await joplin.data.get(['notes', noteId], {
+            fields: ['id', 'title', 'updated_time'],
+        });
+
+        var isSame: Boolean = false;
+        var cNote: TNoteWithRefs;
+
+        if (Cache.hasNote(noteId)) {
+            cNote = Cache.getNote(noteId);
+            if (note['title'] === cNote.noteTitle) {
+                isSame = true;
+            }
+        }
+        return isSame;
     }
 
     /**
@@ -138,7 +112,10 @@ export class RefsNotesDB {
         var isSame: Boolean = false;
         if (Cache.hasNote(noteId)) {
             cNote = Cache.getNote(noteId);
-            if (tNote.title == cNote.title && tNote.hasSameRefsAs(cNote)) {
+            if (
+                tNote.noteTitle === cNote.noteTitle &&
+                tNote.hasSameRefsAs(cNote)
+            ) {
                 isSame = true;
             }
         }
@@ -153,26 +130,16 @@ export class RefsNotesDB {
 
     removeNote(noteId: string): void {
         if (this.notesMap.has(noteId)) {
-            this.osisRefsMap.removeNote(this.notesMap.get(noteId));
             this.notesMap.delete(noteId);
         }
     }
 
     addNote(note: NoteWithRefs): void {
-        this.notesMap.set(note.id, note);
-        this.osisRefsMap.addNote(note);
+        this.notesMap.set(note.noteID, note);
     }
 
-    /**
-     * Retrieves id of notes
-     * */
-    getNotesForOSISRef(osisString: string): NotesByOSISRef[] {
-        if (osisString === '') {
-            // Return all the notes in the database
-            return Array.from(this.osisRefsMap.values());
-        } else {
-            return [this.osisRefsMap[osisString]];
-        }
+    getNoteFromID(note_id: string): NoteWithRefs {
+        return this.notesMap.get(note_id);
     }
 
     /**

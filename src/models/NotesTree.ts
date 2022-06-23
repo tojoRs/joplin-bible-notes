@@ -37,7 +37,16 @@ export class NotesNode {
         return childrenNotesCount + this.notes.length;
     }
 
-    addNoteToPath(osisRef: OSISRef, path: string[], noteInfo: NoteInfo) {
+    /**
+     *
+     * @returns true if the note has been added, false if the note was already there.
+     * */
+    addNoteToPath(
+        osisRef: OSISRef,
+        path: string[],
+        noteInfo: NoteInfo,
+    ): boolean {
+        let added: boolean = false;
         if (path.length == 0) {
             if (
                 this.notes.find((refNoteElement) => {
@@ -51,18 +60,19 @@ export class NotesNode {
                 this.notes = this.notes.sort((n1, n2) => {
                     return n1.osisRef.compare(n2.osisRef);
                 });
+                added = true;
             }
         } else {
             if (this.children.has(path[0])) {
-                this.children
+                added = this.children
                     .get(path[0])
                     .addNoteToPath(osisRef, path.slice(1), noteInfo);
             } else {
                 let child = new NotesNode(path[0]);
-                child.addNoteToPath(osisRef, path.slice(1), noteInfo);
+                added = child.addNoteToPath(osisRef, path.slice(1), noteInfo);
 
                 // Order keys. Working but I think very costly
-				// The problem of this is that they cannot be reordered at will.
+                // The problem of this is that they cannot be reordered at will.
                 this.children.set(path[0], child);
                 var orderedMap = new Map<string, NotesNode>(
                     [...this.children.entries()].sort((child1, child2) => {
@@ -72,6 +82,23 @@ export class NotesNode {
                 this.children = orderedMap;
             }
         }
+        return added;
+    }
+
+    removeNoteAtPath(
+        osisRef: OSISRef,
+        path: string[],
+        noteInfo: NoteInfo,
+    ): void {
+        if (path.length == 0) {
+            this.notes = this.notes.filter((refNote) => {
+                return refNote.noteInfo.noteID !== noteInfo.noteID;
+            });
+        } else {
+            this.children
+                .get(path[0])
+                .removeNoteAtPath(osisRef, path.slice(1), noteInfo);
+        }
     }
 }
 
@@ -80,15 +107,19 @@ export class NotesTree extends NotesNode {
         super(id);
     }
 
-    addNote(osisRef: OSISRef, noteInfo: NoteInfo): void {
+    addNote(osisRef: OSISRef, noteInfo: NoteInfo): boolean {
         var path = pathFromOSISRef(osisRef);
-        this.addNoteToPath(osisRef, path, noteInfo);
+		return super.addNoteToPath(osisRef, path, noteInfo);
+    }
+
+    removeNoteAt(osisRef: OSISRef, noteInfo: NoteInfo): void {
+        var path = pathFromOSISRef(osisRef);
+        super.removeNoteAtPath(osisRef, path, noteInfo);
     }
 
     addNotes(osisRef: OSISRef, noteInfos: NoteInfo[]): void {
-        var path = pathFromOSISRef(osisRef);
         for (var i in noteInfos) {
-            this.addNoteToPath(osisRef, path, noteInfos[i]);
+            this.addNote(osisRef, noteInfos[i]);
         }
     }
 

@@ -17,7 +17,7 @@ tap.test('Tests for the cache system', (t) => {
 		1234
     );
 
-    Cache.setNote(n.id, n);
+    Cache.setNote(n.noteID, n);
 
     t.end();
 });

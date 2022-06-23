@@ -1,7 +1,5 @@
 "use strict";
 
-import { TNoteWithRefs } from './models/NoteWithRefs';
-
 export enum PluginEventType {
     FETCH_RESULT,
     NOTE_UPDATE,

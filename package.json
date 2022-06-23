@@ -1,6 +1,6 @@
 {
     "name": "joplin-plugin-biblenotes",
-    "version": "1.0.0",
+    "version": "0.2.0",
     "scripts": {
         "dist": "webpack --joplin-plugin-config buildMain && webpack --joplin-plugin-config buildExtraScripts && webpack --joplin-plugin-config createArchive",
         "dev": "webpack --mode development --joplin-plugin-config buildMain && webpack --joplin-plugin-config buildExtraScripts && webpack --joplin-plugin-config createArchive",
@@ -8,6 +8,10 @@
         "typesafe-i18n": "typesafe-i18n --no-watch",
         "test": "tap --ts",
         "update": "npm install generator-joplin && ./node_modules/.bin/yo joplin --update"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/tojoRs/joplin-bible-notes"
     },
     "license": "MIT",
     "keywords": ["joplin-plugin", "Bible", "references"],
